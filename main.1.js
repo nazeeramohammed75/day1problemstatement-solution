@@ -4,16 +4,6 @@ import React from "react";
 // 2. Import ReactDOM for rendering React Component in DOM
 import ReactDom from "react-dom";
 
-//2.a import required objects from redux and react-redux packages
-//import create store
-import { createStore } from "redux";
-//import provider
-import { Provider } from "react-redux";
-
-//2.b. import reducer
-//NOTE : reducer will be imported as default instance of 'combinereducer'
-import reducer from "./reduxapp/reducers/reducers.js";
-
 //3. Bootstrap css
 import "!style!css!bootstrap/dist/css/bootstrap.min.css";
 
@@ -49,11 +39,8 @@ let stocks = [{
 
 let CurrentComponent1 = HOCComponent(StockComponent, stocks);
 let CurrentComponent2 = HOCComponent(CompanyComponent, companies);
+// 5. Rendering Components
 
-//create store, the reducer parameter to the createStore() method will be used to monitor 
-//and update the state in the store
-//React app config
-let store = createStore(reducer);
 
 //5. Rendering the components
 // ReactDom.render(<SimpleComponent message={data} />, document.getElementById('app'));
@@ -63,11 +50,4 @@ let store = createStore(reducer);
 //ReactDom.render(<ProductUIComponent />, document.getElementById('app'));
 //ReactDom.render( < CurrentComponent1 /> , document.getElementById("app"));
 //ReactDom.render( < CurrentComponent2 /> , document.getElementById("app"));
-//ReactDom.render( < MainComponent /> , document.getElementById("app"));
-
-//5. Rendering the components under the provider and store
-ReactDom.render( 
-     <Provider store={store}>
-         <MainComponent />
-     </Provider>,    
-     document.getElementById("app"));
+ReactDom.render( < MainComponent /> , document.getElementById("app"));

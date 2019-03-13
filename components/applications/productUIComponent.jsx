@@ -2,7 +2,8 @@
 import React, {Component} from "react";
 const Categories = ["ECTS", "ECLS", "FOOD"];
 const Manufacturers =["MS Tech", "LS Power", "TS FOOD"];
-
+import ProductService from "./../services/productservice.js";
+///../services/productservice.js";
 class ProductUIComponent extends Component {
 constructor(props) {
     super(props);
@@ -17,64 +18,30 @@ constructor(props) {
         Categories:Categories,
         Manufacturers:Manufacturers,
         Products: [],
-        showError : false,
-        showErrorMessage : "",
-        finalerrorMessagesList =[]        
+        prodRowId :0
+        //showError : false,
+        //showErrorMessage : "",
+      //  finalerrorMessagesList =[]        
     };
+    this.serv = new ProductService();
 }
 
-  validate(name, value) {
-    
-    let errorMessagesList = this.state.finalerrorMessagesList.slice();
-
-    if (name == "ProductId") {
-      if (value.length < 0 || value < 0) {       
-        errorMessagesList.push({
-            showErrorMessage :  "ProductId is Must and Must be +Ve",
-            showError : true
-        });       
-      } else {
-        errorMessagesList.push({
-            showErrorMessage :  "",
-            showError : false
-        });
-      }
-      this.setState({finalerrorMessagesList : errorMessagesList});
-    }
-    
-    if (name == "ProductName") {
-        if (value.length <= 0) {       
-            errorMessagesList.push({
-                showErrorMessage :  "ProductName is Mandatory.",
-                showError : true
-            });       
-          } else {
-            errorMessagesList.push({
-                showErrorMessage :  "",
-                showError : false
-            });
-          }
-      }
-      this.setState({finalerrorMessagesList : errorMessagesList});  
+componentDidMount() {
+    this.serv
+      .getProducts()
+      .then(data => data.json()) // subscription to ge data
+      .then(data => {
+        // received the data and process
+        this.setState({ Products: data });
+        this.setState({ Message: "Call is Successful" });
+      })
+      .catch(error => {
+        // receive error
+        this.setState({ Message: `Call is failed ${error.status}` });
+      });
   }
-
-//Single method to listen change event for each UI element
-handleValueChanges(e){
-    this.setState({[e.target.name]:e.target.value});        
-    //alert(JSON.stringify(e.target.name));
-    this.setState({ [e.target.name]: e.target.value });
-    this.validate(e.target.name, e.target.value);
-}
-handleClearValues(e){
-    this.setState({ProductId:0});
-    this.setState({ProductName:""});
-    this.setState({BasePrice:0});
-    this.setState({CategoryName:""});
-    this.setState({Manufacturer:""});        
-    this.setState({Description:""});  
-}
-
-handleSaveClick(e){
+  
+  handleSaveClick(e){
     //1. Define a temporary array having same schema of products
     let tempProdArray = this.state.Products.slice();
     //2. push the data in the tempProdArray
@@ -91,6 +58,105 @@ handleSaveClick(e){
     //3. update the state of the products array
     this.setState({Products : tempProdArray});
 }
+
+  handlePostClick(e) {
+    let tempProdArray = this.state.Products.slice();
+    //2. push the data in the tempProdArray
+    tempProdArray.push(
+        {
+            ProductId : this.state.ProductId,
+            ProductName : this.state.ProductName,
+            BasePrice : this.state.BasePrice,
+            CategoryName : this.state.CategoryName,
+            Manufacturer : this.state.Manufacturer,
+            Description : this.state.Description
+        }
+    );
+    
+    let product = {
+        ProductId: this.state.ProductId,
+        ProductName: this.state.ProductName,
+        Manufacturer: this.state.Manufacturer,
+        CategoryName: this.state.CategoryName,
+        Description: this.state.Description,
+        BasePrice: this.state.BasePrice,
+        prodRowId : this.state.prodRowId
+      };
+
+    this.serv
+    .getProductByRowId(product.prodRowId)
+    .then(data => data.json())
+    .then(data => {
+       if(data == null) {
+            this.serv
+            .postProduct(product)
+            .then(data => data.json())
+            .then(data => {
+            this.setState({ Product: data });
+            this.setState({
+                Message: "Data Posted Successfully"
+            });
+            })
+            .catch(error => {
+            this.setState({ Message: `Call is failed ${error.status}` });
+            });
+       }
+    })
+    .catch(error => {
+      this.setState({ Message: `Call is failed ${error.status}` });
+    });
+  }  
+//   validate(name, value) {
+    
+//     let errorMessagesList = this.state.finalerrorMessagesList.slice();
+
+//     if (name == "ProductId") {
+//       if (value.length < 0 || value < 0) {       
+//         errorMessagesList.push({
+//             showErrorMessage :  "ProductId is Must and Must be +Ve",
+//             showError : true
+//         });       
+//       } else {
+//         errorMessagesList.push({
+//             showErrorMessage :  "",
+//             showError : false
+//         });
+//       }
+//       this.setState({finalerrorMessagesList : errorMessagesList});
+//     }
+    
+//     if (name == "ProductName") {
+//         if (value.length <= 0) {       
+//             errorMessagesList.push({
+//                 showErrorMessage :  "ProductName is Mandatory.",
+//                 showError : true
+//             });       
+//           } else {
+//             errorMessagesList.push({
+//                 showErrorMessage :  "",
+//                 showError : false
+//             });
+//           }
+//       }
+//       this.setState({finalerrorMessagesList : errorMessagesList});  
+//   }
+
+//Single method to listen change event for each UI element
+handleValueChanges(e){
+    this.setState({[e.target.name]:e.target.value});        
+    //alert(JSON.stringify(e.target.name));
+    this.setState({ [e.target.name]: e.target.value });
+   // this.validate(e.target.name, e.target.value);
+}
+handleClearValues(e){
+    this.setState({ProductId:0});
+    this.setState({ProductName:""});
+    this.setState({BasePrice:0});
+    this.setState({CategoryName:""});
+    this.setState({Manufacturer:""});        
+    this.setState({Description:""});  
+}
+
 handleDeleteClick(e) {    
     let tempUpdateProd = this.state.Products.find( prd => prd.ProductId === this.state.ProductId);
     let index = this.state.Products.indexOf(tempUpdateProd);    
@@ -131,7 +197,7 @@ getProduct(prd) {
     BasePrice : prd.BasePrice,
     CategoryName : prd.CategoryName,
     Manufacturer : prd.Manufacturer,
-    Description : prd.Description
+    Description : prd.Description    
     });
 }
 
@@ -139,45 +205,45 @@ render() {
     return (<div className="container">
             <div className="container">
                 <div className="form-group">
-                    <div className="alert alert-danger" hidden={!this.state.showError}>
+                    {/* <div className="alert alert-danger" hidden={!this.state.showError}>
                         {this.state.showErrorMessage}
-                    </div>
+                    </div> */}
                     <label htmlFor="ProductId">ProductId</label>
                     <input type="text" name="ProductId" className="form-control" 
                     value={this.state.ProductId}
                     onChange={this.handleValueChanges.bind(this)}/>                        
                 </div>
                 <div className="form-group">
-                <div className="alert alert-danger" hidden={!this.state.showError}>
+                {/* <div className="alert alert-danger" hidden={!this.state.showError}>
                         {this.state.showErrorMessage}
-                    </div>
+                    </div> */}
                     <label htmlFor="ProductName">ProductName</label>
                     <input type="text" name="ProductName" className="form-control" 
                     value={this.state.ProductName}
                     onChange={this.handleValueChanges.bind(this)}/>                        
                 </div>
                 <div className="form-group">
-                <div className="alert alert-danger" hidden={!this.state.showError}>
+                {/* <div className="alert alert-danger" hidden={!this.state.showError}>
                         {this.state.showErrorMessage}
-                    </div>
+                    </div> */}
                     <label htmlFor="BasePrice">BasePrice</label>
                     <input type="text" name="BasePrice" className="form-control" 
                     value={this.state.BasePrice}
                     onChange={this.handleValueChanges.bind(this)}/>                        
                 </div>
                 <div className="form-group">
-                    <div className="alert alert-danger" hidden={!this.state.showError}>
+                    {/* <div className="alert alert-danger" hidden={!this.state.showError}>
                         {this.state.showErrorMessage}
-                    </div>
+                    </div> */}
                     <label htmlFor="Description">Description</label>
                     <textarea type="text" name="Description" className="form-control" 
                     value={this.state.Description}
                     onChange={this.handleValueChanges.bind(this)} />                        
                 </div>
                 <div className="form-group">
-                    <div className="alert alert-danger" hidden={!this.state.showError}>
+                    {/* <div className="alert alert-danger" hidden={!this.state.showError}>
                         {this.state.showErrorMessage}
-                    </div>
+                    </div> */}
                     <label htmlFor="CategoryName">CategoryName</label>
                     <select name="CategoryName" className="form-control" 
                       value={this.state.CategoryName}
@@ -190,9 +256,9 @@ render() {
                 </div>                            
               
                 <div className="form-group">
-                    <div className="alert alert-danger" hidden={!this.state.showError}>
+                    {/* <div className="alert alert-danger" hidden={!this.state.showError}>
                             {this.state.showErrorMessage}
-                        </div>
+                        </div> */}
                     <label htmlFor="Manufacturer">Manufacturer</label>
                     <select  name="Manufacturer" className="form-control" 
                       value={this.state.Manufacturer}
@@ -205,17 +271,26 @@ render() {
                 <div className="form-group">
                     <input type="button" value="New" className="btn btn-default" 
                     onClick={this.handleClearValues.bind(this)}/>
-                    
+                    &nbsp;
                     <input type="button" value="Save" className="btn btn-success"   
                     onClick={this.handleSaveClick.bind(this)}/>
-
+                    &nbsp;
                      <input type="button" value="Update" className="btn btn-success" 
                     onClick={this.handleUpdateClick.bind(this)}/>
-
+                    &nbsp;
                     <input type="button" value="Delete" className="btn btn-success"   
                     onClick={this.handleDeleteClick.bind(this)}/>
+                    &nbsp;
+                    <input
+                        type="button"
+                        value="Post"
+                        onClick={this.handlePostClick.bind(this)}
+                        className="btn btn-success" />
                 </div>
         </div>
+        <div className="container">{this.state.Message}</div>
+        <hr />
+        
         <div className="container"> 
          <table className="table table-bordered table-stripped">
            <thead>
